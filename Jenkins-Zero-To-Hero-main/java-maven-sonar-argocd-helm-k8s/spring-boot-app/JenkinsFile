@@ -1,9 +1,9 @@
 pipeline {
   agent {
     docker {
-      //image 'abhishekf5/maven-abhishek-docker-agent:v1'
+      image 'awslearn08/maven-build-demo'
       //args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
-      image 'node:16-alpine'
+      args '--user root'
     }
   }
   stages {
@@ -13,19 +13,6 @@ pipeline {
         //git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero.git'
       }
     }
-    stage('Install Java and Maven') {
-            steps {
-                script {
-                    // Update package list and install OpenJDK 17 and Maven
-                    sh '''
-                        apt-get update
-                        apt-get install -y openjdk-17-jdk maven
-                        java -version
-                        mvn -version
-                    '''
-                }
-            }
-        }
     stage('Build and Test') {
       steps {
         sh 'java --version'
