@@ -62,7 +62,6 @@ pipeline {
                     git config --global user.email "awslearn08@gmail.com"
                     git config --global user.name "Nivethini"
                     BUILD_NUMBER=${BUILD_NUMBER}
-                    git clean -fd
                     sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
                     git add Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
