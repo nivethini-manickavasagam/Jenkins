@@ -9,7 +9,6 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        deleteDir()
         sh 'echo passed'
         git branch: 'main', url: 'https://github.com/nivethini-manickavasagam/Jenkins.git'
       }
