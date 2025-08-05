@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: spring-boot-app
-        image: awslearn08/demo-cicd:25
+        image: awslearn08/demo-cicd:replaceImageTag
         ports:
         - containerPort: 8080
