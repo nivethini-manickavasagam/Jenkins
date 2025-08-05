@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+    environment {
+        SONAR_URL = "http://192.168.20.8:9000/"
+        DOCKER_IMAGE = "awslearn08/demo-cicd:${BUILD_NUMBER}"
+        DOCKERFILE_LOCATION = "Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app"
+        REGISTRY_CREDENTIALS = credentials('docker-cred')
+    }
+    stages {
+        stage('CheckOut') {
+            steps {
+                sh 'echo Passed'
+                git branch: 'main', url: 'https://github.com/nivethini-manickavasagam/Jenkins.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'cd Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app/ && mvn clean package'
+                sh 'echo checked'
+            }
+        }
+        stage('Sonar') {
+            steps {
+                withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) { 
+                    sh 'cd Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+                }
+            }
+        }
+        stage('Build Docker image') {
+            steps {
+                sh 'cd ${DOCKERFILE_LOCATION} && docker build -t ${DOCKER_IMAGE} .'
+            }
+        }
+        stage('Login Docker hub') {
+            steps {
+                    withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }           
+        }
+        stage('Push Docker image') {
+            steps {
+                sh 'docker push ${DOCKER_IMAGE}'
+            }
+        }
+        stage('Update Deployment File') {
+        environment {
+            GIT_REPO_NAME = "Jenkins"
+            GIT_USER_NAME = "nivethini-manickavasagam"
+        }
+        steps {
+            withCredentials([string(credentialsId: 'git', variable: 'GITHUB_TOKEN')]) {
+                sh '''
+                    git config --global --add safe.directory /var/lib/jenkins/workspace/first-jenkins-job 
+                    git config --global user.email "awslearn08@gmail.com"
+                    git config --global user.name "Nivethini"
+                    BUILD_NUMBER=${BUILD_NUMBER}
+                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git add Jenkins-Zero-To-Hero-main/java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git clean -fd
+                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                    git push https://${GIT_USER_NAME}:${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                '''
+            }
+        }
+    }
+    }
+}
